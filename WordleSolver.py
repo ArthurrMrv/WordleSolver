@@ -62,6 +62,33 @@ class WordleSolver:
             return None
         self.possibleWords = self.possibleOuptus[tuple(resultEval)]
         self.lastWord = self.currentWord
+    
+    def analyseResults(self, resultEvals, reinitialize=False):
+        """Analyze the results of the evaluations and update the possible words accordingly
+
+        Args:
+            resultEvals (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        resultEvals = dict(resultEvals) if type(resultEvals) != dict else resultEvals
+        
+        if reinitialize:
+            self.possibleWords = self.words.copy()
+            self.currentWord = self.firstWord
+            self.possibleOuptus = self._getPossibilities(self.currentWord)
+            
+        for word in resultEvals.keys():
+                
+            if resultEvals[word] == tuple([1 for _ in range(len(word))]):
+                self.currentWord = word
+                return None
+
+            self.lastWord = self.currentWord
+            self.currentWord = word
+            self.possibleOuptus = self._getPossibilities(self.currentWord)
+            self.possibleWords = self.possibleOuptus[tuple(resultEvals[word])]
         
     def _eval(self, word_to_find, current_word):
         """Evaluate the similarity between the word to find and the current word
