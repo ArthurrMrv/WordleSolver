@@ -3,7 +3,7 @@ import string
 import random
 
 class WordleSolver:
-    def __init__(self, dataPath='updated5letters.txt', firstWord=None, lenWords=5) -> None:
+    def __init__(self, dataPath="300kWords.txt", firstWord=None, recomanded = True, lenWords=5) -> None:
         """Initialize the WordleSolver object with the given parameters and set up the necessary attributes
 
         Args:
@@ -19,6 +19,11 @@ class WordleSolver:
         self.countLetters = dict([(i, {"nb": 0, 
                                        "maxtested": 0,
                                        "possPlacement": [None for _ in range(lenWords)]}) for i in string.ascii_lowercase])
+        
+        RECOMANDED_FIRST_WORDS = {5: "tares", 6: "stares", 7: "masters", 8: "smartest", 9: "smartness", 10: "smartasses"}
+        
+        if firstWord == None and recomanded:
+            self.firstWord = RECOMANDED_FIRST_WORDS[lenWords] if lenWords in RECOMANDED_FIRST_WORDS.keys() else None
         
         # Check the file extension of the dataPath and load the data accordingly
         if dataPath.endswith('.csv'):
