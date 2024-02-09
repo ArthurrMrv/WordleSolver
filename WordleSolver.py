@@ -85,7 +85,8 @@ class WordleSolver:
             self.possibleOuptus = self._getPossibilities(self.currentWord)
             
         for word in resultEvals.keys():
-                
+            
+            #If the word os the one we are looking for, we set it as the current one and exit the loop
             if resultEvals[word] == tuple([1 for _ in range(len(word))]):
                 self.currentWord = word
                 return None
@@ -93,7 +94,10 @@ class WordleSolver:
             self.lastWord = self.currentWord
             self.currentWord = word
             self.possibleOuptus = self._getPossibilities(self.currentWord)
-            self.possibleWords = self.possibleOuptus[tuple(resultEvals[word])]
+            
+            #Sometimes the eval output is not a possible key...
+            if tuple(resultEvals[word]) in self.possibleOuptus:
+                self.possibleWords = self.possibleOuptus[tuple(resultEvals[word])]
         
     def _eval(self, word_to_find, current_word):
         """Evaluate the similarity between the word to find and the current word
