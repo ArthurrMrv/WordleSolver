@@ -1,5 +1,6 @@
-from WordleSolver import *
+import WordleSolver as wSolv
 
 if __name__ == "__main__":
-    playOnce()
-    print(evaluateModel())
+    wSolv.playOnce()
+    
+    
