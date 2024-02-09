@@ -2,9 +2,10 @@ import pandas as pd
 import string
 import random
 import sys
+import json
 
 class WordleSolver:
-    def __init__(self, dataPath="300kWords.txt", firstWord=None, recomanded = True, lenWords=5) -> None:
+    def __init__(self, dataPath="300kWords.txt", firstWord=None, recomandedFirstWordPath = "recomandedFirstWors.json", lenWords=5) -> None:
         """Initialize the WordleSolver object with the given parameters and set up the necessary attributes
 
         Args:
@@ -21,10 +22,14 @@ class WordleSolver:
                                        "maxtested": 0,
                                        "possPlacement": [None for _ in range(lenWords)]}) for i in string.ascii_lowercase])
         
-        RECOMANDED_FIRST_WORDS = {5: "tares", 6: "stares", 7: "masters", 8: "smartest", 9: "smartness", 10: "smartasses"}
-        
-        if firstWord == None and recomanded:
-            self.firstWord = RECOMANDED_FIRST_WORDS[lenWords] if lenWords in RECOMANDED_FIRST_WORDS.keys() else None
+        if firstWord == None and recomandedFirstWordPath != None:
+            with open(recomandedFirstWordPath, 'r') as f:
+                self.recomandedFirstWords = json.load(f)
+            
+            self.firstWord = self.recomandedFirstWords[str(lenWords)] if str(lenWords) in self.recomandedFirstWords else None
+        else:
+            self.firstWord = firstWord
+            
         
         # Check the file extension of the dataPath and load the data accordingly
         if dataPath.endswith('.csv'):
@@ -45,7 +50,6 @@ class WordleSolver:
             raise ValueError("The dataPath should be a .csv or .txt file")
             
         # Set the initial word, length of words, and other attributes
-        self.firstWord = firstWord
         self.lenWords = lenWords
         
         self.words = set(temp)
@@ -53,6 +57,16 @@ class WordleSolver:
         self.possibleWords = self.words.copy()
         self.possibleOuptus = dict()
         self.lastWord = None 
+        
+    def updateJsonFirstWords(self, recomandedFirstWordPath = "recomandedFirstWors.json"):
+        """Update the json file containing the recommanded first words
+
+        Args:
+            recomandedFirstWordPath (str, optional): _description_. Defaults to "recomandedFirstWors.json".
+        """
+        self.recomandedFirstWords[str(self.lenWords)] = self.firstWord
+        with open(recomandedFirstWordPath, 'w') as f:
+            json.dump(self.recomandedFirstWords, f)
     
     def analyseResult(self, resultEval):
         """Analyze the result of the evaluation and update the possible words accordingly
