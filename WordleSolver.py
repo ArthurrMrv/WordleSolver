@@ -1,6 +1,7 @@
 import pandas as pd
 import string
 import random
+import sys
 
 class WordleSolver:
     def __init__(self, dataPath="300kWords.txt", firstWord=None, recomanded = True, lenWords=5) -> None:
@@ -144,19 +145,52 @@ class WordleSolver:
                 possibilities[res] = [word]
         return possibilities
         
-    def getNextWord(self):
+    def getNextWord(self, showFirstWordSearch=True):
         """Get the next word to guess
 
         Returns:
             _type_: _description_
         """
-        
+
         # For the first word
-        if type(self.firstWord) == str and (len(self.words) == len(self.possibleWords)):
-            possibilities = self._getPossibilities(self.firstWord)
-            self.currentWord = self.firstWord if len(possibilities.keys()) > 1 else possibilities[list(possibilities.keys())[0]][0]
-            self.possibleOuptus = possibilities
-            return self.firstWord
+        if (len(self.words) == len(self.possibleWords)):
+            
+            #If the first word is provided
+            if type(self.firstWord) == str:
+                possibilities = self._getPossibilities(self.firstWord)
+                self.currentWord = self.firstWord if len(possibilities.keys()) > 1 else possibilities[list(possibilities.keys())[0]][0]
+                self.possibleOuptus = possibilities
+                return self.firstWord
+            
+            else:
+                ans = {
+                    "pivot": None,
+                    "possibilities": dict()
+                }
+                total = len(self.words)-1  # total number to reach
+                bar_length = 40  # should be less than 100
+                incrementBar = 0
+                for pivot in self.words:
+                    possibilities = self._getPossibilities(pivot)
+                    if len(possibilities) > len(ans["possibilities"].keys()):
+                        ans["pivot"] = pivot
+                        ans["possibilities"] = possibilities
+                        
+                    #update loading bar
+                    if showFirstWordSearch:
+                        percent = 100.0*incrementBar/total
+                        sys.stdout.write('\r')
+                        sys.stdout.write("Searching the best first word: [{:{}}] {:>3}% ({}/{})"
+                                        .format('o'*int(percent/(100.0/bar_length)),
+                                                bar_length, int(percent), incrementBar, total))
+                        sys.stdout.flush()
+                        incrementBar += 1
+
+                self.currentWord = ans["pivot"] if len(ans["possibilities"].keys()) > 1 else ans["possibilities"][list(ans["possibilities"].keys())[0]][0]
+                self.possibleOuptus = ans["possibilities"]
+            
+                self.firstWord = self.currentWord
+                return self.currentWord
         
         # For every other word
         ans = {
@@ -171,11 +205,6 @@ class WordleSolver:
 
         self.currentWord = ans["pivot"] if len(ans["possibilities"].keys()) > 1 else ans["possibilities"][list(ans["possibilities"].keys())[0]][0]
         self.possibleOuptus = ans["possibilities"]
-        
-        #Set the ifrst word to itself if already entered, else set it to the current word
-        if (len(self.possibleWords) == len(self.words)):
-            self.firstWord = self.currentWord
-        
         return self.currentWord
     
     def reset(self):
