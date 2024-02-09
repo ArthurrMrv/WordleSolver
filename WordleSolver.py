@@ -172,18 +172,34 @@ class WordleSolver:
         self.currentWord = ans["pivot"] if len(ans["possibilities"].keys()) > 1 else ans["possibilities"][list(ans["possibilities"].keys())[0]][0]
         self.possibleOuptus = ans["possibilities"]
         
+        #Set the ifrst word to itself if already entered, else set it to the current word
+        if (len(self.possibleWords) == len(self.words)):
+            self.firstWord = self.currentWord
+        
         return self.currentWord
+    
+    def reset(self):
+        """Reset the game (and keep the first word even if non provided)
 
-def playOnce(wordToFind=None, wordToStart=None, display=True):
+        Returns:
+            _type_: _description_
+        """
+        
+        self.possibleWords = self.words.copy()
+        self.possibleOuptus = dict()
+        self.lastWord = None
+
+def playOnce(display=True, recommanded=True, lenWords=5, wordToFind=None, wordToStart=None):
     """Play the game once
 
     Args:
+        display (bool, optional): _description_. Defaults to True.
+        recommanded (bool, optional): Use recomanded first word (if exists). Defaults to True.
         wordToFind (_type_, optional): _description_. Defaults to None.
         wordToStart (_type_, optional): _description_. Defaults to None.
-        display (bool, optional): _description_. Defaults to True.
     """
     
-    bob = WordleSolver(firstWord=wordToStart)
+    bob = WordleSolver(firstWord=wordToStart, recommanded=recommanded, lenWords=lenWords)
     to_find = wordToFind if wordToFind != None else random.choice(tuple(bob.words))
     if display:
         print(f"-> to find: {to_find}")
@@ -191,30 +207,30 @@ def playOnce(wordToFind=None, wordToStart=None, display=True):
         resultEval = eval(to_find, bob.getNextWord())
         if display:
             print(f"Guess {i+1} ; word: {bob.currentWord} | eval : {resultEval}")
-        if resultEval == (1, 1, 1, 1, 1):
+        if resultEval == tuple([1 for _ in range(len(to_find))]):
             if display:
                 print(f"Found in {i+1} guesses")
             break
         bob.analyseResult(resultEval)
         
-def evaluateModel(iters=100, wordToFind="aback", wordToStart="tares", lenWords=5):
+def evaluateModel(iters=100, recommanded = True, lenWords=5, wordToFind=None, wordToStart=None):
     """Evaluate the model by playing the game multiple times
 
     Args:
         iters (int, optional): _description_. Defaults to 100.
-        wordToFind (str, optional): _description_. Defaults to "aback".
-        wordToStart (str, optional): _description_. Defaults to "tares".
+        recommanded (bool, optional): Use the recommanded first word (If exists). Defaults to True.
         lenWords (int, optional): _description_. Defaults to 5.
+        wordToFind (str, optional): _description_. Defaults to "".
+        wordToStart (str, optional): _description_. Defaults to "".
 
     Returns:
         _type_: _description_
     """
     
     score = 0
+    bob = WordleSolver(firstWord=wordToStart, recommanded=recommanded, lenWords=lenWords)
     for _ in range(iters):
-        bob = WordleSolver(firstWord=wordToStart, lenWords=lenWords)
-        to_find = random.choice(tuple(bob.words))
-        to_find = wordToFind
+        to_find = random.choice(tuple(bob.words)) if wordToFind == None else wordToFind
         for i in range(1, 7):
             resultEval = eval(to_find, bob.getNextWord())
             if resultEval == tuple([1 for _ in range(lenWords)]):
@@ -223,5 +239,6 @@ def evaluateModel(iters=100, wordToFind="aback", wordToStart="tares", lenWords=5
             bob.analyseResult(resultEval)
         if i == 6:
             pass
+        bob.reset()
         
     return score/iters
