@@ -58,15 +58,22 @@ class WordleSolver:
         self.possibleOuptus = dict()
         self.lastWord = None 
         
-    def updateJsonFirstWords(self, recomandedFirstWordPath = "recomandedFirstWors.json"):
+    def saveFirstWords(self, recomandedFirstWordPath = "recomandedFirstWors.json"):
         """Update the json file containing the recommanded first words
 
         Args:
             recomandedFirstWordPath (str, optional): _description_. Defaults to "recomandedFirstWors.json".
         """
         self.recomandedFirstWords[str(self.lenWords)] = self.firstWord
+        
+        # Sort the keys
+        sorted_keys = sorted(self.recomandedFirstWords.keys(), key=lambda x: int(x)) #Carreful, the keys are strings
+
+        # Create a dictionary with sorted keys
+        self.recomandedFirstWords = {key: self.recomandedFirstWords[key] for key in sorted_keys}
+        
         with open(recomandedFirstWordPath, 'w') as f:
-            json.dump(self.recomandedFirstWords, f)
+            json.dump(self.recomandedFirstWords, f, indent=4)
     
     def analyseResult(self, resultEval):
         """Analyze the result of the evaluation and update the possible words accordingly
@@ -171,10 +178,12 @@ class WordleSolver:
             possibilities = self._getPossibilities(self.firstWord)
             self.currentWord = self.firstWord if len(possibilities.keys()) > 1 else possibilities[list(possibilities.keys())[0]][0]
             self.possibleOuptus = possibilities
-            return self.firstWord
         
         else:
-            return self._getBestWordFit(showloadingBar=showFirstWordSearch, message="Searching first word")
+            self.firstWord =  self._getBestWordFit(showloadingBar=showFirstWordSearch, message="Searching first word")
+        
+        return self.firstWord
+            
         
     def getNextWord(self, showloadingBar=False, showFirstWordSearch=True):
         """Get the next word to guess
