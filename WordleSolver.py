@@ -158,8 +158,25 @@ class WordleSolver:
             else:
                 possibilities[res] = [word]
         return possibilities
+    
+    def getFirstWord(self,  showFirstWordSearch=True):
+        """Get the first word to guess
+
+        Args:
+            showFirstWordSearch (bool, optional): _description_. Defaults to True.
+        """
         
-    def getNextWord(self, showFirstWordSearch=True):
+        #If the first word is provided
+        if type(self.firstWord) == str:
+            possibilities = self._getPossibilities(self.firstWord)
+            self.currentWord = self.firstWord if len(possibilities.keys()) > 1 else possibilities[list(possibilities.keys())[0]][0]
+            self.possibleOuptus = possibilities
+            return self.firstWord
+        
+        else:
+            return self._getBestWordFit(showloadingBar=showFirstWordSearch, message="Searching first word")
+        
+    def getNextWord(self, showloadingBar=False, showFirstWordSearch=True):
         """Get the next word to guess
 
         Returns:
@@ -168,54 +185,36 @@ class WordleSolver:
 
         # For the first word
         if (len(self.words) == len(self.possibleWords)):
-            
-            #If the first word is provided
-            if type(self.firstWord) == str:
-                possibilities = self._getPossibilities(self.firstWord)
-                self.currentWord = self.firstWord if len(possibilities.keys()) > 1 else possibilities[list(possibilities.keys())[0]][0]
-                self.possibleOuptus = possibilities
-                return self.firstWord
-            
-            else:
-                ans = {
-                    "pivot": None,
-                    "possibilities": dict()
-                }
-                total = len(self.words)-1  # total number to reach
-                bar_length = 40  # should be less than 100
-                incrementBar = 0
-                for pivot in self.words:
-                    possibilities = self._getPossibilities(pivot)
-                    if len(possibilities) > len(ans["possibilities"].keys()):
-                        ans["pivot"] = pivot
-                        ans["possibilities"] = possibilities
-                        
-                    #update loading bar
-                    if showFirstWordSearch:
-                        percent = 100.0*incrementBar/total
-                        sys.stdout.write('\r')
-                        sys.stdout.write("Searching the best first word: [{:{}}] {:>3}% ({}/{})"
-                                        .format('o'*int(percent/(100.0/bar_length)),
-                                                bar_length, int(percent), incrementBar, total))
-                        sys.stdout.flush()
-                        incrementBar += 1
-
-                self.currentWord = ans["pivot"] if len(ans["possibilities"].keys()) > 1 else ans["possibilities"][list(ans["possibilities"].keys())[0]][0]
-                self.possibleOuptus = ans["possibilities"]
-            
-                self.firstWord = self.currentWord
-                return self.currentWord
+            return self.getFirstWord(showFirstWordSearch)
         
         # For every other word
+        return self._getBestWordFit(showloadingBar)
+        
+    def _getBestWordFit(self, showloadingBar=False, message = "Searching next word"):
         ans = {
             "pivot": None,
             "possibilities": dict()
         }
+        
+        #loading bar elements
+        total = len(self.words)-1  # total number to reach
+        bar_length = 40  # should be less than 100
+        incrementBar = 0
+            
         for pivot in self.words:
             possibilities = self._getPossibilities(pivot)
             if len(possibilities) > len(ans["possibilities"].keys()):
                 ans["pivot"] = pivot
                 ans["possibilities"] = possibilities
+            
+            if showloadingBar:
+                percent = 100.0*incrementBar/total
+                sys.stdout.write('\r')
+                sys.stdout.write("{}: [{:{}}] {:>3}% ({}/{})"
+                                .format(message, 'o'*int(percent/(100.0/bar_length)),
+                                        bar_length, int(percent), incrementBar, total))
+                sys.stdout.flush()
+                incrementBar += 1
 
         self.currentWord = ans["pivot"] if len(ans["possibilities"].keys()) > 1 else ans["possibilities"][list(ans["possibilities"].keys())[0]][0]
         self.possibleOuptus = ans["possibilities"]
