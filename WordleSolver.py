@@ -3,7 +3,7 @@ import string
 import random
 
 class WordleSolver:
-    def __init__(self, dataPath='updated5letters.txt', firstWord=None, lenWords=5) -> None:
+    def __init__(self, dataPath="300kWords.txt", firstWord=None, recomanded = True, lenWords=5) -> None:
         """Initialize the WordleSolver object with the given parameters and set up the necessary attributes
 
         Args:
@@ -19,6 +19,11 @@ class WordleSolver:
         self.countLetters = dict([(i, {"nb": 0, 
                                        "maxtested": 0,
                                        "possPlacement": [None for _ in range(lenWords)]}) for i in string.ascii_lowercase])
+        
+        RECOMANDED_FIRST_WORDS = {5: "tares", 6: "stares", 7: "masters", 8: "smartest", 9: "smartness", 10: "smartasses"}
+        
+        if firstWord == None and recomanded:
+            self.firstWord = RECOMANDED_FIRST_WORDS[lenWords] if lenWords in RECOMANDED_FIRST_WORDS.keys() else None
         
         # Check the file extension of the dataPath and load the data accordingly
         if dataPath.endswith('.csv'):
@@ -62,6 +67,37 @@ class WordleSolver:
             return None
         self.possibleWords = self.possibleOuptus[tuple(resultEval)]
         self.lastWord = self.currentWord
+    
+    def analyseResults(self, resultEvals, reinitialize=False):
+        """Analyze the results of the evaluations and update the possible words accordingly
+
+        Args:
+            resultEvals (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        resultEvals = dict(resultEvals) if type(resultEvals) != dict else resultEvals
+        
+        if reinitialize:
+            self.possibleWords = self.words.copy()
+            self.currentWord = self.firstWord
+            self.possibleOuptus = self._getPossibilities(self.currentWord)
+            
+        for word in resultEvals.keys():
+            
+            #If the word os the one we are looking for, we set it as the current one and exit the loop
+            if resultEvals[word] == tuple([1 for _ in range(len(word))]):
+                self.currentWord = word
+                return None
+
+            self.lastWord = self.currentWord
+            self.currentWord = word
+            self.possibleOuptus = self._getPossibilities(self.currentWord)
+            
+            #Sometimes the eval output is not a possible key...
+            if tuple(resultEvals[word]) in self.possibleOuptus:
+                self.possibleWords = self.possibleOuptus[tuple(resultEvals[word])]
         
     def _eval(self, word_to_find, current_word):
         """Evaluate the similarity between the word to find and the current word
@@ -136,18 +172,34 @@ class WordleSolver:
         self.currentWord = ans["pivot"] if len(ans["possibilities"].keys()) > 1 else ans["possibilities"][list(ans["possibilities"].keys())[0]][0]
         self.possibleOuptus = ans["possibilities"]
         
+        #Set the ifrst word to itself if already entered, else set it to the current word
+        if (len(self.possibleWords) == len(self.words)):
+            self.firstWord = self.currentWord
+        
         return self.currentWord
+    
+    def reset(self):
+        """Reset the game (and keep the first word even if non provided)
 
-def playOnce(wordToFind=None, wordToStart=None, display=True):
+        Returns:
+            _type_: _description_
+        """
+        
+        self.possibleWords = self.words.copy()
+        self.possibleOuptus = dict()
+        self.lastWord = None
+
+def playOnce(display=True, recommanded=True, lenWords=5, wordToFind=None, wordToStart=None):
     """Play the game once
 
     Args:
+        display (bool, optional): _description_. Defaults to True.
+        recommanded (bool, optional): Use recomanded first word (if exists). Defaults to True.
         wordToFind (_type_, optional): _description_. Defaults to None.
         wordToStart (_type_, optional): _description_. Defaults to None.
-        display (bool, optional): _description_. Defaults to True.
     """
     
-    bob = WordleSolver(firstWord=wordToStart)
+    bob = WordleSolver(firstWord=wordToStart, recommanded=recommanded, lenWords=lenWords)
     to_find = wordToFind if wordToFind != None else random.choice(tuple(bob.words))
     if display:
         print(f"-> to find: {to_find}")
@@ -155,30 +207,30 @@ def playOnce(wordToFind=None, wordToStart=None, display=True):
         resultEval = eval(to_find, bob.getNextWord())
         if display:
             print(f"Guess {i+1} ; word: {bob.currentWord} | eval : {resultEval}")
-        if resultEval == (1, 1, 1, 1, 1):
+        if resultEval == tuple([1 for _ in range(len(to_find))]):
             if display:
                 print(f"Found in {i+1} guesses")
             break
         bob.analyseResult(resultEval)
         
-def evaluateModel(iters=100, wordToFind="aback", wordToStart="tares", lenWords=5):
+def evaluateModel(iters=100, recommanded = True, lenWords=5, wordToFind=None, wordToStart=None):
     """Evaluate the model by playing the game multiple times
 
     Args:
         iters (int, optional): _description_. Defaults to 100.
-        wordToFind (str, optional): _description_. Defaults to "aback".
-        wordToStart (str, optional): _description_. Defaults to "tares".
+        recommanded (bool, optional): Use the recommanded first word (If exists). Defaults to True.
         lenWords (int, optional): _description_. Defaults to 5.
+        wordToFind (str, optional): _description_. Defaults to "".
+        wordToStart (str, optional): _description_. Defaults to "".
 
     Returns:
         _type_: _description_
     """
     
     score = 0
+    bob = WordleSolver(firstWord=wordToStart, recommanded=recommanded, lenWords=lenWords)
     for _ in range(iters):
-        bob = WordleSolver(firstWord=wordToStart, lenWords=lenWords)
-        to_find = random.choice(tuple(bob.words))
-        to_find = wordToFind
+        to_find = random.choice(tuple(bob.words)) if wordToFind == None else wordToFind
         for i in range(1, 7):
             resultEval = eval(to_find, bob.getNextWord())
             if resultEval == tuple([1 for _ in range(lenWords)]):
@@ -187,5 +239,6 @@ def evaluateModel(iters=100, wordToFind="aback", wordToStart="tares", lenWords=5
             bob.analyseResult(resultEval)
         if i == 6:
             pass
+        bob.reset()
         
     return score/iters
