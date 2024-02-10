@@ -154,12 +154,12 @@ class WordleSolver:
             self.possibleOuptus = possibilities
         
         else:
-            self.firstWord =  self._getBestWordFit(showloadingBar=showFirstWordSearch, message="Searching first word")
+            self.firstWord =  self._getBestWordFit(showLoadingBar=showFirstWordSearch, message="Searching first word")
         
         return self.firstWord
             
         
-    def getNextWord(self, showloadingBar=False, showFirstWordSearch=True):
+    def getNextWord(self, showLoadingBar=False, showFirstWordSearch=True):
         """Get the next word to guess
 
         Returns:
@@ -171,9 +171,9 @@ class WordleSolver:
             return self.getFirstWord(showFirstWordSearch)
         
         # For every other word
-        return self._getBestWordFit(showloadingBar)
+        return self._getBestWordFit(showLoadingBar)
         
-    def _getBestWordFit(self, showloadingBar=False, message = "Searching next word"):
+    def _getBestWordFit(self, showLoadingBar=False, message = "Searching next word"):
         ans = {
             "pivot": None,
             "possibilities": dict()
@@ -190,8 +190,8 @@ class WordleSolver:
                 ans["pivot"] = pivot
                 ans["possibilities"] = possibilities
             
-            if showloadingBar:
-                percent = 100.0*incrementBar/total
+            if showLoadingBar:
+                percent = 100.0*(incrementBar/total)
                 sys.stdout.write('\r')
                 sys.stdout.write("{}: [{:{}}] {:>3}% ({}/{})"
                                 .format(message, 'o'*int(percent/(100.0/bar_length)),
@@ -264,7 +264,7 @@ def playOnce(display=True, lenWords=5, wordToFind=None, wordToStart=None):
             break
         bob.analyseResult(resultEval)
         
-def evaluateModel(iters=100, lenWords=5, wordToFind=None, wordToStart=None):
+def evaluateModel(iters=100, lenWords=5, wordToFind=None, wordToStart=None, showLoadingBar = False):
     """Evaluate the model by playing the game multiple times
 
     Args:
@@ -276,7 +276,11 @@ def evaluateModel(iters=100, lenWords=5, wordToFind=None, wordToStart=None):
     Returns:
         _type_: _description_
     """
-    
+    #loading bar elements
+    total = iters  # total number to reach
+    bar_length = 40  # should be less than 100
+    incrementBar = 0
+        
     score = 0
     bob = WordleSolver(firstWord=wordToStart, lenWords=lenWords)
     for _ in range(iters):
@@ -287,6 +291,14 @@ def evaluateModel(iters=100, lenWords=5, wordToFind=None, wordToStart=None):
                 score += i 
                 break
             bob.analyseResult(resultEval)
+        if showLoadingBar:
+                percent = 100.0*(incrementBar/total)
+                sys.stdout.write('\r')
+                sys.stdout.write("Simulating game {}: [{:{}}] {:>3}% ({}/{})"
+                                .format(incrementBar+1, 'o'*int(percent/(100.0/bar_length)),
+                                        bar_length, int(percent), incrementBar, total))
+                sys.stdout.flush()
+                incrementBar += 1
         if i == 6:
             pass
         bob.reset()
