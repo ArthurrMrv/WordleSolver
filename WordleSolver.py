@@ -5,7 +5,7 @@ import sys
 import json
 
 class WordleSolver:
-    def __init__(self, dataPath="300kWords.txt", firstWord=None, recomandedFirstWordPath = "recomandedFirstWors.json", lenWords=5) -> None:
+    def __init__(self, dataPath="300kWords.txt", firstWord=None, recomandedFirstWordPath = "recomandedFirstWors.json", lenWords=5, language="english") -> None:
         """Initialize the WordleSolver object with the given parameters and set up the necessary attributes
 
         Args:
@@ -16,7 +16,7 @@ class WordleSolver:
         Raises:
             ValueError: _description_
         """
-        
+        self.language = language.strip().lower()
         # countLetters is a dictionary that keeps track of the count, maximum tested index, and possible placements of each letter in the alphabet
         self.countLetters = dict([(i, {"nb": 0, 
                                        "maxtested": 0,
@@ -25,8 +25,9 @@ class WordleSolver:
         if firstWord == None and recomandedFirstWordPath != None:
             with open(recomandedFirstWordPath, 'r') as f:
                 self.recomandedFirstWords = json.load(f)
-            
-            self.firstWord = self.recomandedFirstWords[str(lenWords)] if str(lenWords) in self.recomandedFirstWords else None
+            if self.language not in self.recomandedFirstWords.keys():
+                raise Exception(f"{self.language} is not yet implemented, please use one of the following languages for recomanded first words: {list(self.recomandedFirstWords.keys())}")
+            self.firstWord = self.recomandedFirstWords[self.language][str(lenWords)] if str(lenWords) in self.recomandedFirstWords[self.language] else None
         else:
             self.firstWord = firstWord
             
@@ -64,13 +65,13 @@ class WordleSolver:
         Args:
             recomandedFirstWordPath (str, optional): _description_. Defaults to "recomandedFirstWors.json".
         """
-        self.recomandedFirstWords[str(self.lenWords)] = self.firstWord
+        self.recomandedFirstWords[self.language][str(self.lenWords)] = self.firstWord
         
         # Sort the keys
-        sorted_keys = sorted(self.recomandedFirstWords.keys(), key=lambda x: int(x)) #Carreful, the keys are strings
+        sorted_keys = sorted(self.recomandedFirstWords[self.language].keys(), key=lambda x: int(x)) #Carreful, the keys are strings
 
         # Create a dictionary with sorted keys
-        self.recomandedFirstWords = {key: self.recomandedFirstWords[key] for key in sorted_keys}
+        self.recomandedFirstWords[self.language] = {key: self.recomandedFirstWords[self.language][key] for key in sorted_keys}
         
         with open(recomandedFirstWordPath, 'w') as f:
             json.dump(self.recomandedFirstWords, f, indent=4)
@@ -241,7 +242,7 @@ class WordleSolver:
 
         return tuple(sc)
 
-def playOnce(display=True, lenWords=5, wordToFind=None, wordToStart=None):
+def playOnce(display=True, lenWords=5, authorizedTries = 6, wordToFind=None, wordToStart=None):
     """Play the game once
 
     Args:
@@ -264,7 +265,7 @@ def playOnce(display=True, lenWords=5, wordToFind=None, wordToStart=None):
             break
         bob.analyseResult(resultEval)
         
-def evaluateModel(iters=100, lenWords=5, wordToFind=None, wordToStart=None, showLoadingBar = False):
+def evaluateModel(iters=100, lenWords=5, authorizedTries = 6, wordToFind=None, wordToStart=None, showLoadingBar = False):
     """Evaluate the model by playing the game multiple times
 
     Args:
@@ -285,7 +286,7 @@ def evaluateModel(iters=100, lenWords=5, wordToFind=None, wordToStart=None, show
     bob = WordleSolver(firstWord=wordToStart, lenWords=lenWords)
     for _ in range(iters):
         to_find = random.choice(tuple(bob.words)) if wordToFind == None else wordToFind
-        for i in range(1, 7):
+        for i in range(1, authorizedTries+1):
             resultEval = WordleSolver._eval(to_find, bob.getNextWord())
             if resultEval == tuple([1 for _ in range(lenWords)]):
                 score += i 
@@ -299,7 +300,7 @@ def evaluateModel(iters=100, lenWords=5, wordToFind=None, wordToStart=None, show
                                         bar_length, int(percent), incrementBar, total))
                 sys.stdout.flush()
                 incrementBar += 1
-        if i == 6:
+        if i == authorizedTries:
             pass
         bob.reset()
         
