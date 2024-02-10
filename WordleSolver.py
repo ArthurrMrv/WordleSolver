@@ -120,32 +120,6 @@ class WordleSolver:
             #Sometimes the eval output is not a possible key...
             if tuple(resultEvals[word]) in self.possibleOuptus:
                 self.possibleWords = self.possibleOuptus[tuple(resultEvals[word])]
-        
-    def _eval(self, word_to_find, current_word):
-        """Evaluate the similarity between the word to find and the current word
-
-        Args:
-            word_to_find (_type_): _description_
-            current_word (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        
-        compo_word_to_find = list(word_to_find)
-        sc = [0 for _ in range(len(word_to_find))]
-        
-        for i in range(len(current_word)):
-            if current_word[i] == word_to_find[i]:
-                compo_word_to_find.remove(current_word[i])
-                sc[i] = 1
-        
-        for i in range(len(current_word)):
-            if sc[i] == 0 and current_word[i] in compo_word_to_find:
-                compo_word_to_find.remove(current_word[i])
-                sc[i] = 0.5
-
-        return tuple(sc)
     
     def _getPossibilities(self, pivot):
         """Get the possible words based on the pivot word
@@ -239,23 +213,49 @@ class WordleSolver:
         self.possibleWords = self.words.copy()
         self.possibleOuptus = dict()
         self.lastWord = None
+    
+    @staticmethod
+    def _eval(word_to_find, current_word):
+        """Evaluate the similarity between the word to find and the current word
 
-def playOnce(display=True, recommanded=True, lenWords=5, wordToFind=None, wordToStart=None):
+        Args:
+            word_to_find (_type_): _description_
+            current_word (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        
+        compo_word_to_find = list(word_to_find)
+        sc = [0 for _ in range(len(word_to_find))]
+        
+        for i in range(len(current_word)):
+            if current_word[i] == word_to_find[i]:
+                compo_word_to_find.remove(current_word[i])
+                sc[i] = 1
+        
+        for i in range(len(current_word)):
+            if sc[i] == 0 and current_word[i] in compo_word_to_find:
+                compo_word_to_find.remove(current_word[i])
+                sc[i] = 0.5
+
+        return tuple(sc)
+
+def playOnce(display=True, lenWords=5, wordToFind=None, wordToStart=None):
     """Play the game once
 
     Args:
         display (bool, optional): _description_. Defaults to True.
-        recommanded (bool, optional): Use recomanded first word (if exists). Defaults to True.
         wordToFind (_type_, optional): _description_. Defaults to None.
         wordToStart (_type_, optional): _description_. Defaults to None.
     """
     
-    bob = WordleSolver(firstWord=wordToStart, recommanded=recommanded, lenWords=lenWords)
+    bob = WordleSolver(firstWord=wordToStart, lenWords=lenWords)
     to_find = wordToFind if wordToFind != None else random.choice(tuple(bob.words))
     if display:
         print(f"-> to find: {to_find}")
     for i in range(20):
-        resultEval = eval(to_find, bob.getNextWord())
+        resultEval = WordleSolver._eval(to_find, bob.getNextWord())
         if display:
             print(f"Guess {i+1} ; word: {bob.currentWord} | eval : {resultEval}")
         if resultEval == tuple([1 for _ in range(len(to_find))]):
@@ -264,12 +264,11 @@ def playOnce(display=True, recommanded=True, lenWords=5, wordToFind=None, wordTo
             break
         bob.analyseResult(resultEval)
         
-def evaluateModel(iters=100, recommanded = True, lenWords=5, wordToFind=None, wordToStart=None):
+def evaluateModel(iters=100, lenWords=5, wordToFind=None, wordToStart=None):
     """Evaluate the model by playing the game multiple times
 
     Args:
         iters (int, optional): _description_. Defaults to 100.
-        recommanded (bool, optional): Use the recommanded first word (If exists). Defaults to True.
         lenWords (int, optional): _description_. Defaults to 5.
         wordToFind (str, optional): _description_. Defaults to "".
         wordToStart (str, optional): _description_. Defaults to "".
@@ -279,11 +278,11 @@ def evaluateModel(iters=100, recommanded = True, lenWords=5, wordToFind=None, wo
     """
     
     score = 0
-    bob = WordleSolver(firstWord=wordToStart, recommanded=recommanded, lenWords=lenWords)
+    bob = WordleSolver(firstWord=wordToStart, lenWords=lenWords)
     for _ in range(iters):
         to_find = random.choice(tuple(bob.words)) if wordToFind == None else wordToFind
         for i in range(1, 7):
-            resultEval = eval(to_find, bob.getNextWord())
+            resultEval = WordleSolver._eval(to_find, bob.getNextWord())
             if resultEval == tuple([1 for _ in range(lenWords)]):
                 score += i 
                 break
